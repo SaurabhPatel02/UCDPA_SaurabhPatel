@@ -8,7 +8,7 @@ sub = a-b
 mult = a*b
 div = a/b
 
-# print standard calc function
+# understand standard calc function
 print(add)
 print(sub)
 print(mult)
