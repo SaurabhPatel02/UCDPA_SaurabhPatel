@@ -1,24 +1,40 @@
 import requests
 
 # test first api to get current iss location
-api1_data = requests.get("http://api.open-notify.org/iss-now.json")
-print(api1_data)
-print(api1_data.json())
+api11_data = requests.get("http://api.open-notify.org/iss-now.json")
+print(api11_data)
+print(api11_data.json())
 
-parsed_api1_data = api1_data.json()
-print(type(parsed_api1_data))
-print(parsed_api1_data["iss_position"])
-print(parsed_api1_data["message"])
+parsed_api11_data = api11_data.json()
+print(type(parsed_api11_data))
+print(parsed_api11_data["iss_position"])
+print(parsed_api11_data["message"])
 
 # test first api to find number of person in space
-api2_data = requests.get("http://api.open-notify.org/astros.json")
+api12_data = requests.get("http://api.open-notify.org/astros.json")
+print(api12_data)
+print(api12_data.json())
+parsed_api12_data = api12_data.json()
+print(type(parsed_api12_data))
+print(parsed_api12_data["number"])
+print(parsed_api12_data["message"])
+print(parsed_api12_data["people"])
+# print multiple values
+for p in parsed_api12_data["people"]:
+    print(p["name"])
+for p in parsed_api12_data["people"]:
+    print(p["craft"])
+
+# api key CIBFBXPX8IO5DC5M
+
+
+
+# implement type 2 API with key
+api2_data = requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=CIBFBXPX8IO5DC5M")
 print(api2_data)
 print(api2_data.json())
 parsed_api2_data = api2_data.json()
 print(type(parsed_api2_data))
-print(parsed_api2_data["number"])
-print(parsed_api2_data["message"])
-print(parsed_api2_data["people"])
+print(parsed_api2_data["Meta Data"])
+print(parsed_api2_data["Time Series (5min)"])
 # print multiple values
-for p in parsed_api2_data["people"]:
-    print(p["name"])
