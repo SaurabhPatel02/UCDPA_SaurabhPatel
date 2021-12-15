@@ -29,7 +29,7 @@ for p in parsed_api12_data["people"]:
 
 
 
-# implement type 2 API with key
+# implement type 2 API - stock - intraday trading with key
 api2_data = requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=CIBFBXPX8IO5DC5M")
 print(api2_data)
 print(api2_data.json())
@@ -37,4 +37,13 @@ parsed_api2_data = api2_data.json()
 print(type(parsed_api2_data))
 print(parsed_api2_data["Meta Data"])
 print(parsed_api2_data["Time Series (5min)"])
-# print multiple values
+
+# implement type 2 API - company overview with key
+api22_data = requests.get("https://www.alphavantage.co/query?function=OVERVIEW&symbol=IBM&apikey=CIBFBXPX8IO5DC5M")
+print(api22_data)
+print(api22_data.json())
+parsed_api22_data = api22_data.json()
+print(type(parsed_api22_data))
+print(parsed_api22_data["Symbol"])
+print(parsed_api22_data["AssetType"])
+print(parsed_api22_data["ProfitMargin"])
