@@ -1,5 +1,5 @@
 import requests
-
+#  https://www.alphavantage.co/documentation/
 # test first api to get current iss location
 api11_data = requests.get("http://api.open-notify.org/iss-now.json")
 print(api11_data)
@@ -47,3 +47,27 @@ print(type(parsed_api22_data))
 print(parsed_api22_data["Symbol"])
 print(parsed_api22_data["AssetType"])
 print(parsed_api22_data["ProfitMargin"])
+
+# implement type 2 API - inflation with key
+api23_data = requests.get("https://www.alphavantage.co/query?function=INFLATION&apikey=CIBFBXPX8IO5DC5M")
+print(api23_data)
+print(api23_data.json())
+parsed_api23_data = api23_data.json()
+print(type(parsed_api23_data))
+print(parsed_api23_data["name"])
+print(parsed_api23_data["data"])
+# print all dates for which inflation rate is available
+for p in parsed_api23_data["data"]:
+    print(p["date"])
+
+# implement type 2 API - inflation expectation with key
+api24_data = requests.get("https://www.alphavantage.co/query?function=INFLATION_EXPECTATION&apikey=CIBFBXPX8IO5DC5M")
+print(api24_data)
+print(api24_data.json())
+parsed_api24_data = api24_data.json()
+print(type(parsed_api24_data))
+print(parsed_api24_data["name"])
+print(parsed_api24_data["data"])
+# print all dates for which inflation rate is available
+for p in parsed_api24_data["data"]:
+    print(p["date"])
