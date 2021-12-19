@@ -69,8 +69,8 @@ plt.plot(x, z, linestyle="dashed", marker="o", color="r")
 
 # ............implement chart from real time data ......................
 # import data set
-gb_df = pd.read_csv("C:/Users/BYO/PycharmProjects/UCDPA_SaurabhPatel/Data/GBVideos.csv")
-# gb_df = pd.read_csv("Data/GBvideos.csv") -- getting error with content root path
+gb_df = pd.read_csv("C:/Users/BYO/PycharmProjects/UCDPA_SaurabhPatel/Data/GBvideos.csv")
+# gb_df = pd.read_csv("Data/GBvideos.csv") #-- getting error with content root path
 print(gb_df.shape)
 print(gb_df.head())
 
