@@ -1,218 +1,198 @@
-import os #paths to file
-import numpy as np # linear algebra
-import pandas as pd # data processing
-import warnings # warning filter
+# import packages
+import numpy as np
+import pandas as pd
+import warnings
 
-
-#ploting libraries
+# import libraries
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-#relevant ML libraries
-from sklearn.preprocessing import LabelEncoder
+# import ML libraries
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 
-#ML models
+# import ML models
 from xgboost import XGBClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-#default theme
-sns.set(context='notebook', style='darkgrid', palette='deep', font='sans-serif', font_scale=1, color_codes=False, rc=None)
-
-#warning hadle
+# handle warnings
 warnings.filterwarnings("ignore")
 
-#path for the training set
-tr_path = "train_u6lujuX_CVtuZ9i.csv"
-#path for the testing set
-te_path = "test_Y3wMUE5_7gLdaTN.csv"
+# 1. Data Collection..................................................................
 
-# read in csv file as a DataFrame
-tr_df = pd.read_csv(tr_path)
-# explore the first 5 rows
-#print(tr_df.head())
-tr_df.head()
+trng_path = "Train_LoanPredictionData.csv"  # path for the training data sets
+test_path = "Test_LoanPredictionData.csv"  # path for the testing data sets
 
-# read in csv file as a DataFrame
-te_df = pd.read_csv(te_path)
-# explore the first 5 rows
-te_df.head()
-#print(te_df.head())
+# read train data set csv files as a DataFrame
+trng_df = pd.read_csv(trng_path)
+trng_df.head()  # explore the first 5 rows
 
-print(f"training set (row, col): {tr_df.shape}\n\ntesting set (row, col): {te_df.shape}")
+# read test data set csv file as a DataFrame
+test_df = pd.read_csv(test_path)
+test_df.head()  # explore the first 5 rows
 
-#column information
-tr_df.info(verbose=True, null_counts=True)
-#summary statistics
-tr_df.describe()
+print(f"training set (row, col): {trng_df.shape}\ntesting set (row, col): {test_df.shape}")
 
-#the Id column is not needed, let's drop it for both test and train datasets
-tr_df.drop('Loan_ID',axis=1,inplace=True)
-te_df.drop('Loan_ID',axis=1,inplace=True)
-#checking the new shapes
-print(f"training set (row, col): {tr_df.shape}\n\ntesting set (row, col): {te_df.shape}")
+# 2. Data Preparation/Cleaning..................................................................
 
-#missing values in decsending order
-tr_df.isnull().sum().sort_values(ascending=False)
+# check column information
+trng_df.head()
+trng_df.shape
+trng_df.describe()
+trng_df.info()
 
-#filling the missing data
-print("Before filling missing values\n\n","#"*50,"\n")
-null_cols = ['Credit_History', 'Self_Employed', 'LoanAmount','Dependents', 'Loan_Amount_Term', 'Gender', 'Married']
+# dropping ID column as not needed for both data sets
+trng_df.drop('Loan_ID', axis=1, inplace=True)
+test_df.drop('Loan_ID', axis=1, inplace=True)
+# checking the new shapes
+print(f"training set (row, col): {trng_df.shape}\ntesting set (row, col): {test_df.shape}")
 
+# check missing values and print in descending order
+print(trng_df.isnull().sum().sort_values(ascending=False))
+
+# check most frequent value against missing rows for each column
+print("check no. of rows for unique value of each column\n", "#" * 20, "\n")
+null_cols = ['Credit_History', 'Self_Employed', 'LoanAmount', 'Dependents', 'Loan_Amount_Term', 'Gender', 'Married']
 for col in null_cols:
-    print(f"{col}:\n{tr_df[col].value_counts()}\n", "-" * 50)
-    tr_df[col] = tr_df[col].fillna(
-        tr_df[col].dropna().mode().values[0])
+    print(f"{col}:\n{trng_df[col].value_counts()}\n", "-" * 20)
+    trng_df[col] = trng_df[col].fillna(trng_df[col].dropna().mode().values[0])
 
-tr_df.isnull().sum().sort_values(ascending=False)
-print("After filling missing values\n\n", "#" * 50, "\n")
+# fill the missing value with most frequent value for each column
+print("No. of rows for each column after filling missing values\n", "#" * 20, "\n")
 for col in null_cols:
-    print(f"\n{col}:\n{tr_df[col].value_counts()}\n", "-" * 50)
+    print(f"\n{col}:\n{trng_df[col].value_counts()}\n", "-" * 20)
 
-#list of all the columns.columns
-#Cols = tr_df.tolist()
-#list of all the numeric columns
-num = tr_df.select_dtypes('number').columns.to_list()
-#list of all the categoric columns
-cat = tr_df.select_dtypes('object').columns.to_list()
+# verify that data is still have missing values
+print(trng_df.isnull().sum().sort_values(ascending=False))
+print(test_df.isnull().sum().sort_values(ascending=False))
+print(trng_df.info())
+print(test_df.info())
 
-#numeric df
-loan_num =  tr_df[num]
-#categoric df
-loan_cat = tr_df[cat]
+# 3. Feature engineering ..................................................................
 
-print(tr_df[cat[-1]].value_counts())
-#tr_df[cat[-1]].hist(grid = False)
+# let us visualize the data to find Loan status distribution
+# split data to categorical and numerical data
 
-#print(i)
-total = float(len(tr_df[cat[-1]]))
-plt.figure(figsize=(8,10))
-sns.set(style="whitegrid")
-ax = sns.countplot(tr_df[cat[-1]])
-for p in ax.patches:
-    height = p.get_height()
-    ax.text(p.get_x()+p.get_width()/2.,height + 3,'{:1.2f}'.format(height/total),ha="center")
-plt.show()
+num = trng_df.select_dtypes('number').columns.to_list()
+print(num)  # print list of all the numeric columns
+loan_num = trng_df[num]
+cat = trng_df.select_dtypes('object').columns.to_list()
+print(cat)  # print list of all the categorical columns
+loan_cat = trng_df[cat]
 
+# print loan status distribution
+print(trng_df[cat[-1]].value_counts())
+
+# plot numeric data
 for i in loan_num:
     plt.hist(loan_num[i])
     plt.title(i)
     plt.show()
 
+# Categorical (split by Loan status):
 for i in cat[:-1]:
-    plt.figure(figsize=(15,10))
-    plt.subplot(2,3,1)
-    sns.countplot(x=i ,hue='Loan_Status', data=tr_df ,palette='plasma')
-    plt.xlabel(i, fontsize=14)
+    plt.figure(figsize=(10, 5))
+    plt.subplot(2, 3, 1)
+    sns.countplot(x=i, hue='Loan_Status', data=trng_df, palette='plasma')
+    plt.xlabel(i, fontsize=10)
+    plt.show()
 
-#converting categorical values to numbers
-
-to_numeric = {'Male': 1, 'Female': 2,
-'Yes': 1, 'No': 2,
-'Graduate': 1, 'Not Graduate': 2,
-'Urban': 3, 'Semiurban': 2,'Rural': 1,
-'Y': 1, 'N': 0,
-'3+': 3}
+# converting categorical values to numbers
+to_numeric = {'Male': 1, 'Female': 2, 'Yes': 1, 'No': 2, 'Graduate': 1, 'Not Graduate': 2, 'Urban': 3, 'Semiurban': 2,
+              'Rural': 1, 'Y': 1, 'N': 0, '3+': 3}
 
 # adding the new numeric values from the to_numeric variable to both datasets
-tr_df = tr_df.applymap(lambda lable: to_numeric.get(lable) if lable in to_numeric else lable)
-te_df = te_df.applymap(lambda lable: to_numeric.get(lable) if lable in to_numeric else lable)
+trng_df = trng_df.applymap(lambda label: to_numeric.get(label) if label in to_numeric else label)
+test_df = test_df.applymap(lambda label: to_numeric.get(label) if label in to_numeric else label)
 
-# convertind the Dependents column
-Dependents_ = pd.to_numeric(tr_df.Dependents)
-Dependents__ = pd.to_numeric(te_df.Dependents)
+# converting the Dependents column
+Dependents_ = pd.to_numeric(trng_df.Dependents)
+Dependents__ = pd.to_numeric(test_df.Dependents)
 
 # dropping the previous Dependents column
-tr_df.drop(['Dependents'], axis = 1, inplace = True)
-te_df.drop(['Dependents'], axis = 1, inplace = True)
+trng_df.drop(['Dependents'], axis=1, inplace=True)
+test_df.drop(['Dependents'], axis=1, inplace=True)
 
-# concatination of the new Dependents column with both datasets
-tr_df = pd.concat([tr_df, Dependents_], axis = 1)
-te_df = pd.concat([te_df, Dependents__], axis = 1)
+# concatenation of the new Dependents' column with both datasets
+trng_df = pd.concat([trng_df, Dependents_], axis=1)
+test_df = pd.concat([test_df, Dependents__], axis=1)
 
-# checking the our manipulated dataset for validation
-print(f"training set (row, col): {tr_df.shape}\n\ntesting set (row, col): {te_df.shape}\n")
-print(tr_df.info(), "\n\n", te_df.info())
+# checking manipulated dataset for validation
+print(f"training set (row, col): {trng_df.shape}\n\ntesting set (row, col): {test_df.shape}\n")
+print(trng_df.info(), "\n\n", test_df.info())
 
-#plotting the correlation matrix
-sns.heatmap(tr_df.corr() ,cmap='cubehelix_r')
+# plotting the correlation matrix
+plt.figure(figsize=(10, 10))
+sns.heatmap(trng_df.corr(), cmap='cubehelix_r')
+plt.show()
+# correlation table
+corr = trng_df.corr()
+print(corr)
 
-#correlation table
-corr = tr_df.corr()
-corr.style.background_gradient(cmap='coolwarm').set_precision(2)
+# Conclusion - We can clearly see that Credit_History has the highest correlation with Loan_Status a positive
+# correlation 0.540556. Therefore, our target value is highly dependent on the column 'Credit History'.
 
-y = tr_df['Loan_Status']
-X = tr_df.drop('Loan_Status', axis = 1)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 0)
+#  4. Implement machine learning algorithm......................................................
 
+# Let us divide our dataset into two variables X as the features we defined earlier and y as the Loan_Status the
+# target value we want to predict.
+# Models we will use to predict the target value : Random Forest, XGBoost, Logistic Regression
+
+# split train and test data
+y = trng_df['Loan_Status']
+X = trng_df.drop('Loan_Status', axis=1)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+
+# implement decision tree ML algorithm
 DT = DecisionTreeClassifier()
-DT.fit(X_train, y_train)
+DT.fit(X_train, y_train)  # fit the model
+y_predict = DT.predict(X_test)  # predict the target
+print(classification_report(y_test, y_predict))  # print predicted result
+DT_SC = accuracy_score(y_predict, y_test)
+print(f"{round(DT_SC * 100, 2)}% Accurate")  # print accuracy score
+Decision_Tree = pd.DataFrame({'y_test': y_test, 'prediction': y_predict})
+Decision_Tree.to_csv("Decision_Tree.csv")  # print output to csv
 
-y_predict = DT.predict(X_test)
-#
-#  prediction Summary by species
-print(classification_report(y_test, y_predict))
-
-# Accuracy score
-DT_SC = accuracy_score(y_predict,y_test)
-print(f"{round(DT_SC*100,2)}% Accurate")
-
-Decision_Tree=pd.DataFrame({'y_test':y_test,'prediction':y_predict})
-Decision_Tree.to_csv("Dection Tree.csv")
-
+# implement random forest ML algorithm
 RF = RandomForestClassifier()
-RF.fit(X_train, y_train)
+RF.fit(X_train, y_train)  # fit the model
+y_predict = RF.predict(X_test)  # predict the target
+print(classification_report(y_test, y_predict))  # print predicted result
+RF_SC = accuracy_score(y_predict, y_test)
+print(f"{round(RF_SC * 100, 2)}% Accurate")  # print accuracy score
+Random_Forest = pd.DataFrame({'y_test': y_test, 'prediction': y_predict})
+Random_Forest.to_csv("Random_Forest.csv")  # print output to csv
 
-y_predict = RF.predict(X_test)
-
-#  prediction Summary by species
-print(classification_report(y_test, y_predict))
-
-# Accuracy score
-RF_SC = accuracy_score(y_predict,y_test)
-print(f"{round(RF_SC*100,2)}% Accurate")
-
-Random_Forest=pd.DataFrame({'y_test':y_test,'prediction':y_predict})
-Random_Forest.to_csv("Random Forest.csv")
-
+# implement XGBoost ML algorithm
 XGB = XGBClassifier()
-XGB.fit(X_train, y_train)
+XGB.fit(X_train, y_train)  # fit the model
+y_predict = XGB.predict(X_test)  # predict the target
+print(classification_report(y_test, y_predict))  # print predicted result
+XGB_SC = accuracy_score(y_predict, y_test)
+print(f"{round(XGB_SC * 100, 2)}% Accurate")  # print accuracy score
+XGBoost = pd.DataFrame({'y_test': y_test, 'prediction': y_predict})
+XGBoost.to_csv("XGBoost.csv")  # print output to csv
 
-y_predict = XGB.predict(X_test)
-
-#  prediction Summary by species
-print(classification_report(y_test, y_predict))
-
-# Accuracy score
-XGB_SC = accuracy_score(y_predict,y_test)
-print(f"{round(XGB_SC*100,2)}% Accurate")
-
-XGBoost=pd.DataFrame({'y_test':y_test,'prediction':y_predict})
-XGBoost.to_csv("XGBoost.csv")
-
+# implement random forest ML algorithm
 LR = LogisticRegression()
-LR.fit(X_train, y_train)
+LR.fit(X_train, y_train)  # fit the model
+y_predict = LR.predict(X_test)  # predict the target
+print(classification_report(y_test, y_predict))  # print predicted result
+LR_SC = accuracy_score(y_predict, y_test)
+print(f"{round(LR_SC * 100, 2)}% Accurate")  # print accuracy score
+Logistic_Regression = pd.DataFrame({'y_test': y_test, 'prediction': y_predict})
+Logistic_Regression.to_csv("Logistic_Regression.csv")  # print output to csv
 
-y_predict = LR.predict(X_test)
-
-#  prediction Summary by species
-print(classification_report(y_test, y_predict))
-
-# Accuracy score
-LR_SC = accuracy_score(y_predict,y_test)
-print('accuracy is',accuracy_score(y_predict,y_test))
-
-Logistic_Regression=pd.DataFrame({'y_test':y_test,'prediction':y_predict})
-Logistic_Regression.to_csv("Logistic Regression.csv")
-
-score = [DT_SC,RF_SC,XGB_SC,LR_SC]
+# print all ML algorithm's accuracy result
+score = [round(DT_SC * 100, 2), round(RF_SC * 100, 2), round(XGB_SC * 100, 2), round(LR_SC * 100, 2)]
 Models = pd.DataFrame({
-    'n_neighbors': ["Decision Tree","Random Forest","XGBoost", "Logistic Regression"],
+    'ML_algorithm': ["Decision Tree", "Random Forest", "XGBoost", "Logistic Regression"],
     'Score': score})
-Models.sort_values(by='Score', ascending=False)
+print(Models.sort_values(by='Score', ascending=False))
 
+#  5. Conclusion ...............................................................................
+# 5.1. Credit_History is most important variable due to its high correlation with Loan_Status
+# 5.2. Most accurate algorithm is 'The Logistic Regression' with approximately 83%.
